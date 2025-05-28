@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Wallet Balance Viewer</title>
+  <!-- Import Work Sans font -->
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <<style>
+  :root {
+    --bg-dark: #0b0b0f;
+    --bg-card: #18181e;
+    --primary: #8e61ff;
+    --secondary: #9b59b6;
+    --text-main: #f0f0f5;
+    --text-muted: #a0a0aa;
+    --border: #2c2c36;
+  }
+
+  body {
+    font-family: 'Work Sans', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    margin: 0;
+    padding: 2rem;
+  }
+
+  h1, h2, h3 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--primary);
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 0 12px rgba(142, 97, 255, 0.1);
+    border: 1px solid var(--border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 18px rgba(142, 97, 255, 0.3);
+  }
+
+  label {
+    font-weight: 500;
+    display: block;
+    margin-top: 1rem;
+    color: var(--text-muted);
+  }
+
+  input[type="text"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #121218;
+    color: var(--text-main);
+  }
+
+  button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    font-family: 'Work Sans', sans-serif;
+    border: none;
+    background: linear-gradient(135deg, #8e61ff, #6133ff);
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  button:hover {
+    background: linear-gradient(135deg, #a17eff, #7155ff);
+  }
+
+  ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  small {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .section-toggle {
+    cursor: pointer;
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+    transition: color 0.2s ease;
+  }
+
+  .section-toggle:hover {
+    color: #a17eff;
+  }
+
+  .section-content {
+    display: none;
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 600px) {
+    body {
+      padding: 1rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+  <h1>🌐 Multi-Wallet Balance Viewer</h1>
+
+  <form method="GET" action="/">
+    <label for="xrp">XRP Address:</label>
+    <input type="text" id="xrp" name="xrp" value="<%= xrpAddress %>" placeholder="r..." />
+
+    <label for="evm">EVM Address:</label>
+    <input type="text" id="evm" name="evm" value="<%= evmAddress %>" placeholder="0x..." />
+
+    <button type="submit">Check Balances</button>
+  </form>
+
+  
+
+  
+    <% if (evmBalances && evmBalances.length > 0) { %>
+    <div class="card">
+      <h2 class="section-toggle" onclick="toggleSection('evm-section')">Native Balances</h2>
+      <div id="evm-section" class="section-content">
+        <h3>Native Tokens</h3>
+        <% if (xrpBalance) { %>
+        <p><strong>XRP:</strong> <%= xrpBalance %></p>
+      <% } %>
+        <ul>
+          <% evmBalances.filter(t => !t.network.includes('(Axelar)')).forEach(net => { %>
+            <li><strong><%= net.network %></strong>: <%= net.balance %> <%= net.symbol %></li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+  <% } %>
+  <% if (axelarBalances && axelarBalances.length > 0) { %>
+    <div class="card">
+      <h2 class="section-toggle" onclick="toggleSection('axl-section')">Axelar Tokens</h2>
+      <div id="axl-section" class="section-content">
+        <ul>
+          <% axelarBalances.filter(t => t.network.includes('(Axelar)')).forEach(token => { %>
+            <li><strong><%= token.symbol %></strong>: <%= token.balance %> on <%= token.network.replace(' (Axelar)', '') %></li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+  <% } %>
+  <% if (xrpTokens.length > 0) { %>
+    <div class="card">
+      <h2 class="section-toggle" onclick="toggleSection('xrp-tokens-section')">XRP Trustline Tokens</h2>
+      <div id="xrp-tokens-section" class="section-content">
+        <h3>Named Tokens</h3>
+        <ul>
+          <% xrpTokens.filter(t => /^[a-zA-Z]{2,10}$/.test(t.currency)).forEach(token => { %>
+            <li>
+              <strong><%= token.currency %></strong>: <strong><%= token.balance %></strong><br>
+              <small>Issuer: <%= token.issuer %></small>
+            </li>
+          <% }); %>
+          <% xrpTokens.filter(t => !/^[a-zA-Z]{2,10}$/.test(t.currency)).forEach(token => { %>
+            <li>
+              <strong title="<%= token.currency %>"><%= hexToUtf8(token.currency) || token.currency %></strong>: <strong><%= token.balance %></strong><br>
+              <small>Issuer: <%= token.issuer %></small>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+  <% } %>
+
+  <% if (xrpNfts.length > 0) { %>
+    <div class="card">
+      <h2 class="section-toggle" onclick="toggleSection('xrp-nfts-section')">XRP NFTs (XLS-20)</h2>
+      <div id="xrp-nfts-section" class="section-content">
+        <ul>
+          <% xrpNfts.forEach(nft => { %>
+            <li>
+              <strong>ID:</strong> <%= nft.id %><br>
+              <strong>URI:</strong> <%= nft.uri %>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+  <% } %>
+  <script>
+    function toggleSection(id) {
+      const section = document.getElementById(id);
+      if (section.style.display === 'none' || section.style.display === '') {
+        section.style.display = 'block';
+      } else {
+        section.style.display = 'none';
+      }
+    }
+
+    document.querySelector('form').addEventListener('submit', function (e) {
+      const xrp = document.querySelector('[name="xrp"]').value.trim();
+      const evm = document.querySelector('[name="evm"]').value.trim();
+      if (xrp === '' && evm === '') {
+        e.preventDefault();
+        alert('Please enter at least one wallet address (XRP or EVM).');
+      }
+    });
+
+    // Initialize all sections as collapsed
+    document.addEventListener('DOMContentLoaded', function () {
+      const sections = document.querySelectorAll('.section-content');
+      sections.forEach(section => {
+        section.style.display = 'none';
+      });
+    });
+  </script>
+</body>
+</html>
